@@ -11,24 +11,30 @@ import java.util.regex.Pattern;
 import static org.junit.Assert.assertEquals;
 
 /**
- * This class makes use of the static methods of the JWTService class for token generation and validation
- * The JWTSERVICE class can be found in the 'org.noah' package
+ * This class provides methods for validating user details and generating JWT tokens using the JWTService class.
+ * The JWTService class can be found in the 'org.noah' package.
+ *
+ * This class offers two methods for user details validation:
+ * 1. {@link #validateUserDetails(String, String, String, LocalDate)}: A non-concurrent method that validates user details and generates a JWT token if all checks pass.
+ * 2. {@link #validateUserDetailsUsingConcurrency(String, String, String, LocalDate)}: A concurrent method that uses CompletableFuture for parallel validation of user details and generates a JWT token if all checks pass.
  */
 public class UserDetailsVerification {
 
     /**
+     * Validates the username of the user.
      *
-     * @param username the username of the user
-     * @return a boolean which determines if the username argument passed in is valid
+     * @param username The username to be validated.
+     * @return true if the username is valid (length > 4), false otherwise.
      */
     private static boolean usernameValidation(String username) {
         return username.length() > 4;
     }
 
     /**
+     * Validates the email format.
      *
-     * @param email the email of the user
-     * @return a boolean true indicating that the email format is valid
+     * @param email The email to be validated.
+     * @return true if the email format is valid, false otherwise.
      */
     private static boolean emailValidation(String email) {
         String validEmailPattern = "^(?=.{1,64}@)[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*@"
@@ -37,9 +43,10 @@ public class UserDetailsVerification {
     }
 
     /**
+     * Validates the password based on certain criteria.
      *
-     * @param password the password of the user
-     * @return a boolean true indicating that the password meets all validation checks
+     * @param password The password to be validated.
+     * @return true if the password meets all validation checks, false otherwise.
      */
     private static boolean passwordValidation(String password) {
         String validPasswordPattern = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,20}$";
@@ -47,9 +54,10 @@ public class UserDetailsVerification {
     }
 
     /**
+     * Validates the date of birth of the user.
      *
-     * @param dateOfBirth the date of birth of the user in LocalDate format
-     * @return a boolean false if the user's is below 16
+     * @param dateOfBirth The date of birth of the user in LocalDate format.
+     * @return false if the user's age is below 16, true otherwise.
      */
     private static boolean dateOfBirthValidation(LocalDate dateOfBirth) {
         if (dateOfBirth == null) {
@@ -61,14 +69,13 @@ public class UserDetailsVerification {
 
 
     /**
+     * Validates user details and generates a JWT token if all validation checks pass.
      *
-     * @param username
-     * @param email
-     * @param password
-     * @param dateOfBirth
-     * @return string.
-     *         If all the validation checks for the parameters passes, JWT Token is generated.
-     *         If there are any failures, a string of the input type and the corresponding error message is returned.
+     * @param username The username of the user.
+     * @param email The email of the user.
+     * @param password The password of the user.
+     * @param dateOfBirth The date of birth of the user in LocalDate format.
+     * @return A JWT token if all validation checks pass, or an error message if there are failures.
      */
     public static String validateUserDetails(String username, String email, String password, LocalDate dateOfBirth) {
         Map<String, String> validationErrors = new HashMap<>();
@@ -97,16 +104,15 @@ public class UserDetailsVerification {
         }
     }
 
+
     /**
+     * Validates user details using CompletableFuture for concurrency and generates a JWT token if all checks pass.
      *
-     * @param username
-     * @param email
-     * @param password
-     * @param dateOfBirth
-     * @return string.
-     *         This method is concurrent and uses CompletableFutures
-     *         If all the validation checks for the parameters passes, JWT Token is generated.
-     *         If there are any failures, a string of the input type and the corresponding error message is returned.
+     * @param username The username of the user.
+     * @param email The email of the user.
+     * @param password The password of the user.
+     * @param dateOfBirth The date of birth of the user in LocalDate format.
+     * @return A JWT token if all validation checks pass, or an error message if there are failures.
      */
     public static String validateUserDetailsUsingConcurrency(String username, String email, String password, LocalDate dateOfBirth) {
         CompletableFuture<String> usernameFuture = CompletableFuture.supplyAsync(() -> username);
@@ -142,10 +148,9 @@ public class UserDetailsVerification {
     }
 
     /**
+     * Entry point for running the non-concurrent and concurrent validation methods and testing JWT token validity.
      *
-     * @param args
-     *        The non-concurrent and concurrent methods for validating user details are run
-     *        The validity of the JWT token for the concurrent method is subsequently tested
+     * @param args Command-line arguments.
      */
     public static void main(String[] args) {
         System.out.println(validateUserDetails("Johnson", "osasereu@gmail.com", "gtfBrillo#90", LocalDate.parse("2003-12-01")));
