@@ -35,6 +35,11 @@ public class JWTService {
 
     private static final String JWT_SECRET = "3676537A24432646126A404G635266546A576E5A7234753778214125442A472E";
 
+    /**
+     *
+     * @param token
+     * @return Claims from the token passed into the method. Claims are a Map of Key and Value pair
+     */
     public static Claims getAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSignInKey())
@@ -43,6 +48,14 @@ public class JWTService {
                 .getBody();
     }
 
+    /**
+     *
+     * @param token
+     * @param claimsResolver
+     * @return a generic.
+     *         This is achieved using Java 8 Function which takes in an input of Claims from the 'getAllClaims' method
+     *         The function returns an output of generic type.
+     */
     public static <T> T getClaim(String token, Function<Claims, T> claimsResolver) {
         Claims claim = getAllClaims(token);
         return claimsResolver.apply(claim);

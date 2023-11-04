@@ -3,6 +3,8 @@ package org.noah;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class PancakeOperator {
 
@@ -10,12 +12,12 @@ public class PancakeOperator {
     private static final int MAXIMUM_PANCAKES_BY_USER = 5;
     private static final int MAXIMUM_PANCAKES_BY_SHOPKEEPER = 12;
 
-    private static int numberOfPancakesMade(){
+    private static int numberOfPancakesMade() {
         Random random = new Random();
         return random.nextInt(MAXIMUM_PANCAKES_BY_SHOPKEEPER + 1);
     }
 
-    public static String simulateRound(int numberOfRounds){
+    public static String simulateRound(int numberOfRounds) {
         Instant startTime = Instant.now();
         Instant endTime = startTime.plus(30, ChronoUnit.SECONDS);
         int totalNumberOfPancakesMade = numberOfPancakesMade();
@@ -28,23 +30,40 @@ public class PancakeOperator {
         if (!areNeedsOfAllUsersMet) {
             unmetOrders = String.valueOf(totalNumberOfPancakesEaten - totalNumberOfPancakesMade);
         }
-        if (totalNumberOfPancakesMade > totalNumberOfPancakesEaten){
+        if (totalNumberOfPancakesMade > totalNumberOfPancakesEaten) {
             wastage = totalNumberOfPancakesMade - totalNumberOfPancakesEaten;
         }
 
-        return report(startTime.toString(), endTime.toString(), totalNumberOfPancakesMade, viewPancakesForEachUser ,totalNumberOfPancakesEaten, areNeedsOfAllUsersMet, unmetOrders, wastage);
+        return report(startTime.toString(), endTime.toString(), totalNumberOfPancakesMade, viewPancakesForEachUser, totalNumberOfPancakesEaten, areNeedsOfAllUsersMet, unmetOrders, wastage);
     }
 
-    private static String report(String startTime, String endTime, int totalNumberOfPancakesMade, String viewPancakeForEachUser, int totalNumberOfPancakesEaten, boolean areNeedsMet, String unmetOrders, int waste){
-//       String report = """
-//                Starting time : {startTime}",
-//                Ending time: },
-//                Number of pancakes made and number of pancakes eaten respectively: ,
-//                are needs of all users met by shop keeper:
-//                if above question is false, how many pancake orders were not met:
-//                Number of wasted pancakes:,
-//
-//                """;
+    public static String simulateRoundConcurrently(int numberOfRounds) throws ExecutionException, InterruptedException {
+        Instant startTime = Instant.now();
+        Instant endTime = startTime.plus(30, ChronoUnit.SECONDS);
+
+        CompletableFuture<Integer> totalNumberOfPancakesMadeFuture = CompletableFuture.supplyAsync(PancakeOperator::numberOfPancakesMade);
+        CompletableFuture<int[]> pancakesOrderForEachUserFuture = CompletableFuture.supplyAsync(PancakeOperator::pancakesOrderedByEachUser);
+
+        int totalNumberOfPancakesMade = totalNumberOfPancakesMadeFuture.get();
+        int[] pancakesOrderForEachUser = pancakesOrderForEachUserFuture.get();
+
+        String viewPancakesForEachUser = viewPancakesOrderedByEachUser(pancakesOrderForEachUser);
+        int totalNumberOfPancakesEaten = totalPancakesEaten(pancakesOrderForEachUser);
+        boolean areNeedsOfAllUsersMet = totalNumberOfPancakesMade >= totalNumberOfPancakesEaten;
+        String unmetOrders = 0 + ", All orders placed by the user were fulfilled.";
+        int wastage = 0;
+        if (!areNeedsOfAllUsersMet) {
+            unmetOrders = String.valueOf(totalNumberOfPancakesEaten - totalNumberOfPancakesMade);
+        }
+        if (totalNumberOfPancakesMade > totalNumberOfPancakesEaten) {
+            wastage = totalNumberOfPancakesMade - totalNumberOfPancakesEaten;
+        }
+
+        return report(startTime.toString(), endTime.toString(), totalNumberOfPancakesMade, viewPancakesForEachUser, totalNumberOfPancakesEaten, areNeedsOfAllUsersMet, unmetOrders, wastage);
+    }
+
+
+    private static String report(String startTime, String endTime, int totalNumberOfPancakesMade, String viewPancakeForEachUser, int totalNumberOfPancakesEaten, boolean areNeedsMet, String unmetOrders, int waste) {
 
         String report = "Starting time: " + startTime + "\n"
                 + "Ending time: " + endTime + "\n"
@@ -55,39 +74,44 @@ public class PancakeOperator {
                 + "if above question is false, how many pancake orders were not met: " + unmetOrders + "\n"
                 + "Number of wasted pancakes if any: " + waste + "\n";
 
-       return report;
+        return report;
     }
 
 
-
-    public static int[] pancakesOrderedByEachUser(){
+    public static int[] pancakesOrderedByEachUser() {
         Random random = new Random();
         int[] pancakeForEachUser = new int[NUMBER_OF_USERS];
-        for (int i =0; i < NUMBER_OF_USERS; i++){
+        for (int i = 0; i < NUMBER_OF_USERS; i++) {
             pancakeForEachUser[i] = random.nextInt(MAXIMUM_PANCAKES_BY_USER + 1);
         }
         return pancakeForEachUser;
     }
 
-    public static String viewPancakesOrderedByEachUser(int[] pancakeForAllUsers ){
+    public static String viewPancakesOrderedByEachUser(int[] pancakeForAllUsers) {
         StringBuilder view = new StringBuilder();
-        for (int pancakeForEachUser: pancakeForAllUsers){
+        for (int pancakeForEachUser : pancakeForAllUsers) {
             view.append(String.valueOf(pancakeForEachUser)).append(", ");
         }
         return view.toString().trim();
     }
 
-    public static int totalPancakesEaten(int[] pancakeForAllUsers){
+    public static int totalPancakesEaten(int[] pancakeForAllUsers) {
         int totalPancakesEaten = 0;
-        for (int pancakeForEachUser: pancakeForAllUsers){
+        for (int pancakeForEachUser : pancakeForAllUsers) {
             totalPancakesEaten += pancakeForEachUser;
         }
         return totalPancakesEaten;
     }
 
     public static void main(String[] args) {
-        for (int i = 1; i <= 5; i++){
+        for (int i = 1; i <= 5; i++) {
             System.out.println(simulateRound(i));
+        }
+    }
+
+    public static void mainConcurrently(String[] args) throws ExecutionException, InterruptedException {
+        for (int i = 1; i <= 5; i++) {
+            System.out.println(simulateRoundConcurrently(i));
         }
     }
 
